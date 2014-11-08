@@ -1,0 +1,103 @@
+<html>
+<head>
+   <title>Shear Geometry</title>
+</head>
+
+<link rel="stylesheet" type="text/css" href="css/style.css"/>
+<script src="js/three.min.js"></script>
+<script src="js/controls/TrackballControls.js"></script>
+<script src="js/renderers/Projector.js"></script>
+<script src="js/renderers/SoftwareRenderer.js"></script>
+
+<body>
+
+<!-- Main -->
+<script>
+
+   // global vars
+   var camera, controls, scene, renderer, cube;
+   var start = Date.now();
+
+   // setup and animate
+   init();
+   animate();
+
+   // setup
+   function init() {
+
+
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 1, 10000);
+      camera.position.z = 1000;
+
+      renderer = new THREE.WebGLRenderer();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      controls = new THREE.TrackballControls( camera );
+
+      document.body.appendChild(renderer.domElement);
+
+      // New cube shape
+      var geometry = new THREE.BoxGeometry( 500, 500, 500, 10, 10, 10);
+      var material = new THREE.MeshBasicMaterial({color: 0xfffff, wireframe: true});
+
+      // shear matrix
+      // ref: http://www.flipcode.com/documents/matrfaq.html#Q43
+      //        | 1    Syx  Szx  0 |
+      //        |                  |
+      //        | Sxy  1    Szy  0 |
+      //    M = |                  |
+      //        | Sxz  Syz  1    0 |
+      //        |                  |
+      //        | 0    0    0    1 |
+      //        |                  |
+
+      var matrix = new THREE.Matrix4();
+
+      var Syx = 1,
+          Szx = 0,
+          Sxy = 0,
+          Szy = 0,
+          Sxz = 0,
+          Syz = 0;
+
+      matrix.set(   1,   Syx,  Szx,  0,
+                  Sxy,     1,  Szy,  0,
+                  Sxz,   Syz,   1,   0,
+                    0,     0,   0,   1  );
+
+
+      geometry.applyMatrix( matrix );
+
+      cube = new THREE.Mesh(geometry, material);
+      scene.add(cube);
+
+      window.addEventListener( 'resize', onWindowResize, false );
+
+   }
+
+   // resize
+   function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize( window.innerWidth, window.innerHeight );
+   }
+
+   // animate
+   function animate() {
+      requestAnimationFrame( animate );
+      render();
+   }
+
+   // render
+   function render() {
+      var timer = Date.now() - start;
+      cube.rotation.x = timer * 0.0002;
+      cube.rotation.z = timer * 0.0003;
+      controls.update();
+      renderer.render( scene, camera );
+   }
+
+</script>
+
+</body>
+</html>
