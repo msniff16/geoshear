@@ -114,10 +114,7 @@
       // rando effects
       cube.castShadow = true;
       cube.receiveShadow = true;
-
       // scene.add(axes);
-
-      cube.matrixAutoUpdate = true;
 
       window.addEventListener( 'resize', onWindowResize, false );
 
@@ -179,7 +176,6 @@
       var timer = Date.now() - start;
       cube.rotation.y = timer * 0.0003;
       controls.update();
-      cube.updateMatrix();
       renderer.render( scene, camera );
    }
 
