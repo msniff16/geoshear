@@ -8,11 +8,44 @@
 <script src="js/controls/TrackballControls.js"></script>
 <script src="js/renderers/Projector.js"></script>
 <script src="js/renderers/SoftwareRenderer.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.1/angular.min.js"></script>
+<script src="js/app.js"></script>
+<script src="js/controller.js"></script>
 
-<body>
+<body ng-controller="controller">
+
+<!-- Matrix Inputs -->
+<div class="matrixBox">
+
+  <p>Shear Transformation</p>
+
+  <form method="get" action="">
+
+    <input type="text" placeholder="Syx" name="syx" />
+    <input type="text" placeholder="Szx" name="szx" />
+    <input type="text" placeholder="Sxy" name="sxy" />
+    <input type="text" placeholder="Szy" name="szy" />
+    <input type="text" placeholder="Sxz" name="sxz" />
+    <input type="text" placeholder="Syz" name="syz" />
+
+    <input type="submit" value="Transform" />
+
+  </form>
+
+</div>
+
+<!-- Scene -->
+<div id="scene"></div>
 
 <!-- Main -->
 <script>
+
+    function getParameterByName(name) {
+        name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+            results = regex.exec(location.search);
+        return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+    }
 
    // global vars
    var camera, controls, scene, renderer, cube;
@@ -32,13 +65,14 @@
 
       renderer = new THREE.WebGLRenderer();
       renderer.setSize(window.innerWidth, window.innerHeight);
-      controls = new THREE.TrackballControls( camera );
 
-      document.body.appendChild(renderer.domElement);
+      container = document.getElementById('scene');
+      container.appendChild(renderer.domElement);
+      controls = new THREE.TrackballControls( camera, container);
 
       // New cube shape
-      var geometry = new THREE.BoxGeometry( 500, 500, 500, 10, 10, 10);
-      var material = new THREE.MeshBasicMaterial({color: 0xfffff, wireframe: true});
+      var geometry = new THREE.BoxGeometry( 500, 500, 500, 10, 30, 30);
+      var material = new THREE.MeshBasicMaterial({color: 0x00B4FF, wireframe: true});
 
       // shear matrix
       // ref: http://www.flipcode.com/documents/matrfaq.html#Q43
@@ -53,12 +87,12 @@
 
       var matrix = new THREE.Matrix4();
 
-      var Syx = 1,
-          Szx = 0,
-          Sxy = 0,
-          Szy = 0,
-          Sxz = 0,
-          Syz = 0;
+      var Syx = getParameterByName('syx'),
+          Szx = getParameterByName('szx'),
+          Sxy = getParameterByName('sxy'),
+          Szy = getParameterByName('szy'),
+          Sxz = getParameterByName('sxz'),
+          Syz = getParameterByName('syz');
 
       matrix.set(   1,   Syx,  Szx,  0,
                   Sxy,     1,  Szy,  0,
@@ -68,14 +102,22 @@
 
       // apply matrix
       geometry.applyMatrix( matrix );
+      geometry.dynamic = true;
 
       // add axes
-      axes = buildAxes(500);
+      // axes = buildAxes(1000);
 
       // add  cube
       cube = new THREE.Mesh(geometry, material);
       scene.add(cube);
-      scene.add(axes);
+
+      // rando effects
+      cube.castShadow = true;
+      cube.receiveShadow = true;
+
+      // scene.add(axes);
+
+      cube.matrixAutoUpdate = true;
 
       window.addEventListener( 'resize', onWindowResize, false );
 
@@ -135,9 +177,9 @@
    // render
    function render() {
       var timer = Date.now() - start;
-      //cube.rotation.x = timer * 0.0002;
       cube.rotation.y = timer * 0.0003;
       controls.update();
+      cube.updateMatrix();
       renderer.render( scene, camera );
    }
 

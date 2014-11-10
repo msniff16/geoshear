@@ -4,10 +4,52 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
+  font-family: helvetica, "helvetica neue";
 }
 
 #renderCanvas {
   width: 100%;
   height: 100%;
   touch-action: none;
+}
+
+.matrixBox {
+  position:absolute;
+  top:100px;
+  left:100px;
+  width:300px;
+  height:300px;
+}
+
+.matrixBox > p {
+  font-size: 20px;
+  font-weight: 300;
+  color: white;
+}
+
+input[type="text"] {
+  width: 80px;
+  padding: 10px;
+  margin: 2px;
+  float:left;
+  outline: none;
+  border: none;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 0px;
+}
+
+input[type="submit"] {
+  background-color: rgb(0,180,255);
+  width: 110px;
+  padding: 10px;
+  margin-top: 15px;
+  margin-left: 2px;
+  float:left;
+  outline: none;
+  border: none;
+  font-size: 14px;
+  font-weight: bold;
+  color:white;
+  border-radius: 0px;
 }
