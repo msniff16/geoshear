@@ -1,4 +1,4 @@
-<html>
+<html ng-app="geoshearapp">
 <head>
    <title>Shear Geometry</title>
 </head>
@@ -19,18 +19,18 @@
 
   <p>Shear Transformation</p>
 
-  <form method="get" action="">
-
-    <input type="text" placeholder="Syx" name="syx" />
-    <input type="text" placeholder="Szx" name="szx" />
-    <input type="text" placeholder="Sxy" name="sxy" />
-    <input type="text" placeholder="Szy" name="szy" />
-    <input type="text" placeholder="Sxz" name="sxz" />
-    <input type="text" placeholder="Syz" name="syz" />
-
-    <input type="submit" value="Transform" />
-
-  </form>
+  <label>Sxy: <span>{{grabSxyVal()}}</span></label>
+  <input type="range" min="0" max="3" step=".01" placeholder="Sxy" id="sxy" name="sxy" ng-model="backgroundInfo.sxy" />
+  <label>Sxz: <span>{{grabSxzVal()}}</span></label>
+  <input type="range" min="0" max="3" step=".01" placeholder="Sxz" id="sxz" name="sxz" ng-model="backgroundInfo.sxz" />
+  <label>Syx: <span>{{grabSyxVal()}}</span></label>
+  <input type="range" min="0" max="3" step=".01" placeholder="Syx" id="syx" name="syx" ng-model="backgroundInfo.syx" />
+  <label>Syz: <span>{{grabSyzVal()}}</span></label>
+  <input type="range" min="0" max="3" step=".01" placeholder="Syz" id="syz" name="syz" ng-model="backgroundInfo.syz" />
+  <label>Szx: <span>{{grabSzxVal()}}</span></label>
+  <input type="range" min="0" max="3" step=".01" placeholder="Szx" id="szx" name="szx" ng-model="backgroundInfo.szx" />
+  <label>Szy: <span>{{grabSzyVal()}}</span></label>
+  <input type="range" min="0" max="3" step=".01" placeholder="Szy" id="szy" name="szy" ng-model="backgroundInfo.szy" />
 
 </div>
 
@@ -40,24 +40,21 @@
 <!-- Main -->
 <script>
 
-    function getParameterByName(name) {
-        name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-            results = regex.exec(location.search);
-        return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-    }
-
    // global vars
-   var camera, controls, scene, renderer, cube;
+   var camera, controls, scene, renderer, geometry, matrix, cube;
    var start = Date.now();
+   var i = 0;
+
+   startLoop();
 
    // setup and animate
-   init();
-   animate();
+   function startLoop() {
+      init();
+      animate();
+   }
 
    // setup
    function init() {
-
 
       scene = new THREE.Scene();
       camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 1, 10000);
@@ -71,7 +68,7 @@
       controls = new THREE.TrackballControls( camera, container);
 
       // New cube shape
-      var geometry = new THREE.BoxGeometry( 500, 500, 500, 10, 30, 30);
+      geometry = new THREE.BoxGeometry( 500, 500, 500, 10, 30, 30);
       var material = new THREE.MeshBasicMaterial({color: 0x00B4FF, wireframe: true});
 
       // shear matrix
@@ -85,14 +82,14 @@
       //        | 0    0    0    1 |
       //        |                  |
 
-      var matrix = new THREE.Matrix4();
+      matrix = new THREE.Matrix4();
 
-      var Syx = getParameterByName('syx'),
-          Szx = getParameterByName('szx'),
-          Sxy = getParameterByName('sxy'),
-          Szy = getParameterByName('szy'),
-          Sxz = getParameterByName('sxz'),
-          Syz = getParameterByName('syz');
+      var Syx = 0,
+          Szx = 0,
+          Sxy = 0,
+          Szy = 0,
+          Sxz = 0,
+          Syz = 0;
 
       matrix.set(   1,   Syx,  Szx,  0,
                   Sxy,     1,  Szy,  0,
@@ -102,7 +99,6 @@
 
       // apply matrix
       geometry.applyMatrix( matrix );
-      geometry.dynamic = true;
 
       // add axes
       // axes = buildAxes(1000);
@@ -119,6 +115,52 @@
       window.addEventListener( 'resize', onWindowResize, false );
 
    }
+
+   // resize
+   function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize( window.innerWidth, window.innerHeight );
+   }
+
+   // animate
+   function animate() {
+
+      var timer = Date.now() - start;
+
+      // grab new elements from sliders
+      var sxy = document.getElementById("sxy").value;
+      var sxz = document.getElementById("sxz").value;
+      var syx = document.getElementById("syx").value;
+      var syz = document.getElementById("syz").value;
+      var szx = document.getElementById("szx").value;
+      var szy = document.getElementById("szy").value;
+
+      // update new elements in matrix
+      cube.matrix.elements[1] = sxy;
+      cube.matrix.elements[2] = sxz;
+      cube.matrix.elements[4] = syx;
+      cube.matrix.elements[6] = syz;
+      cube.matrix.elements[8] = szx;
+      cube.matrix.elements[9] = szy;
+      cube.matrixAutoUpdate = false;
+
+      //cube.geometry.vertices[2].x = sxy;
+      //cube.geometry.verticesNeedUpdate = true;
+
+      requestAnimationFrame( animate );
+      render();
+   }
+
+   // render
+   function render() {
+      var timer = Date.now() - start;
+      cube.rotation.y = timer * 0.0003;
+      cube.updateMatrixWorld( true )
+      controls.update();
+      renderer.render( scene, camera );
+   }
+
 
    // build axes
    function buildAxes( length ) {
@@ -156,27 +198,6 @@
 
         return axis;
 
-   }
-
-   // resize
-   function onWindowResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize( window.innerWidth, window.innerHeight );
-   }
-
-   // animate
-   function animate() {
-      requestAnimationFrame( animate );
-      render();
-   }
-
-   // render
-   function render() {
-      var timer = Date.now() - start;
-      cube.rotation.y = timer * 0.0003;
-      controls.update();
-      renderer.render( scene, camera );
    }
 
 </script>
