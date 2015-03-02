@@ -15,16 +15,33 @@ html, body {
 
 .matrixBox {
   position:absolute;
-  top:100px;
+  top:20px;
   left:100px;
   width:300px;
-  height:300px;
+  height:600px;
 }
 
 .matrixBox > p {
   font-size: 20px;
   font-weight: 300;
   color: white;
+  padding-bottom: 10px;
+  margin: 0;
+  padding-top: 20px;
+  width:300px;
+  float: left;
+  overflow: hidden;
+}
+
+#geoShear {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  width: 160px;
+}
+
+.matrixBox > p > span {
+  font-size: 15px;
 }
 
 label {
@@ -33,12 +50,43 @@ label {
   padding-left: 0px;
   float:left;
   color:white;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 300;
 }
 
+.matrixBox > div {
+  font-size: 14px;
+}
+
+.volume {
+  position: absolute;
+  top: 50px;
+  right: 35px;
+  font-size: 20px;
+  font-weight: 300;
+  color: white;
+  margin: 0;
+  padding-top: 20px;
+}
+
+
 label > span {
 
+}
+
+.matrixBox > div {
+  width: 285px;
+  margin-top: 10px;
+  padding: 10px;
+  padding-left: 0;
+  margin: 2px;
+  float:left;
+  overflow: hidden;
+  color: white;
+}
+
+input[type="checkbox"] {
+  float: left;
 }
 
 input[type="text"] {

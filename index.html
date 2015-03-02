@@ -2,13 +2,13 @@
 <head>
    <title>Shear Geometry</title>
 </head>
-
 <link rel="stylesheet" type="text/css" href="css/style.css"/>
+<link rel="icon" href="img/favicon.png" type="image/png" sizes="32x32">
 <script src="js/three.min.js"></script>
 <script src="js/controls/TrackballControls.js"></script>
 <script src="js/renderers/Projector.js"></script>
 <script src="js/renderers/SoftwareRenderer.js"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.1/angular.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.0/angular.min.js"></script>
 <script src="js/app.js"></script>
 <script src="js/controller.js"></script>
 
@@ -17,10 +17,10 @@
 <!-- Matrix Inputs -->
 <div class="matrixBox">
 
-  <p>Shear Transformation</p>
+  <p style="padding:0;">Shear Transformation</p>
 
   <label>Sxy: <span>{{grabSxyVal()}}</span></label>
-  <input type="range" min="0" max="3" step=".01" placeholder="Sxy" id="sxy" name="sxy" ng-model="backgroundInfo.sxy" />
+  <input type="range" min="0" max="10" step=".01" placeholder="Sxy" id="sxy" name="sxy" ng-model="backgroundInfo.sxy" />
   <label>Sxz: <span>{{grabSxzVal()}}</span></label>
   <input type="range" min="0" max="3" step=".01" placeholder="Sxz" id="sxz" name="sxz" ng-model="backgroundInfo.sxz" />
   <label>Syx: <span>{{grabSyxVal()}}</span></label>
@@ -31,8 +31,36 @@
   <input type="range" min="0" max="3" step=".01" placeholder="Szx" id="szx" name="szx" ng-model="backgroundInfo.szx" />
   <label>Szy: <span>{{grabSzyVal()}}</span></label>
   <input type="range" min="0" max="3" step=".01" placeholder="Szy" id="szy" name="szy" ng-model="backgroundInfo.szy" />
+  <label>Height: <span>{{grabHeight()}}</span></label>
+  <input type="range" min="0" max="3" step=".01" placeholder="Height" id="height" name="height" ng-model="backgroundInfo.height" />
+  <label>Width: <span>{{grabWidth()}}</span></label>
+  <input type="range" min="0" max="3" step=".01" placeholder="Width" id="width" name="width" ng-model="backgroundInfo.width" />
+  <label>Depth: <span>{{grabDepth()}}</span></label>
+  <input type="range" min="0" max="3" step=".01" placeholder="Depth" id="depth" name="depth" ng-model="backgroundInfo.depth" />
+
+  <p>2D Deformation <span>(Plane Strain, V Cons.)</span></p>
+
+  <div>&nbsp;&nbsp;Simple Shear
+    <input type="checkbox" ng-model="backgroundInfo.simpleShear" ng-change="setSimpleShear()" ng-true-value="YES" ng-false-value="NO" ng-disabled="disabled()">
+  </div>
+  <div>&nbsp;&nbsp;Pure Shear (no rotation)
+    <input type="checkbox" ng-model="backgroundInfo.pureShear" ng-change="setPureShear()" ng-true-value="YES" ng-false-value="NO" ng-disabled="disabled()">
+  </div>
+
+  <p>3D Deformation <span>(Triaxial Strain)</span> </p>
+
+  <div>&nbsp;&nbsp;Constriction (L Tectonite, strong lineation)
+    <input type="checkbox" ng-model="backgroundInfo.constriction" ng-change="setConstriction()" ng-true-value="YES" ng-false-value="NO" ng-disabled="disabled()">
+  </div>
+  <div>&nbsp;&nbsp;Flattening (S Tectonite, no lineation)
+    <input type="checkbox" ng-model="backgroundInfo.flattening" ng-change="setFlattening()" ng-true-value="YES" ng-false-value="NO" ng-disabled="disabled()">
+  </div>
 
 </div>
+
+<!-- Total Volume -->
+<img id="geoShear" src="img/logoWhite.png" />
+<p class="volume">Volume: <span style="font-weight:bold;">{{totalVolume()}}</span></p>
 
 <!-- Scene -->
 <div id="scene"></div>
@@ -68,8 +96,24 @@
       controls = new THREE.TrackballControls( camera, container);
 
       // New cube shape
-      geometry = new THREE.BoxGeometry( 500, 500, 500, 10, 30, 30);
-      var material = new THREE.MeshBasicMaterial({color: 0x00B4FF, wireframe: true});
+      geometry = new THREE.BoxGeometry( 500, 500, 500, 50, 50, 50);
+      // var texture = THREE.ImageUtils.loadTexture( 'img/rockFace.png', {}, function(){
+      // // use to test when image gets loaded if it does
+      // // alert('texture loaded')
+      // },
+      // function(){
+      //     alert('error')
+      // });
+      // material = new THREE.MeshBasicMaterial( { map: texture } );
+      // var material = new THREE.MeshBasicMaterial({color: 0x00B4FF, wireframe: true});
+      var material = [
+          new THREE.MeshBasicMaterial({ color: 0x333399, transparent: true, opacity: 1.0, wireframe: true }),
+          new THREE.MeshBasicMaterial({ color: 0x66cccc, transparent: true, opacity: 1.0, wireframe: true }),
+          new THREE.MeshBasicMaterial({ color: 0x77cc33, transparent: true, opacity: 1.0, wireframe: true }),
+          new THREE.MeshBasicMaterial({ color: 0x999999, transparent: true, opacity: 1.0, wireframe: true }),
+          new THREE.MeshBasicMaterial({ color: 0xea4c88, transparent: true, opacity: 1.0, wireframe: true }),
+          new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 1.0, wireframe: true })
+      ];
 
       // shear matrix
       // ref: http://www.flipcode.com/documents/matrfaq.html#Q43
@@ -89,11 +133,14 @@
           Sxy = 0,
           Szy = 0,
           Sxz = 0,
-          Syz = 0;
+          Syz = 0,
+          height = 1,
+          width = 1,
+          depth = 1;
 
-      matrix.set(   1,   Syx,  Szx,  0,
-                  Sxy,     1,  Szy,  0,
-                  Sxz,   Syz,   1,   0,
+      matrix.set(   width,   Syx,  Szx,  0,
+                  Sxy,     height,  Szy,  0,
+                  Sxz,   Syz,   depth,   0,
                     0,     0,   0,   1  );
 
 
@@ -104,7 +151,9 @@
       // axes = buildAxes(1000);
 
       // add  cube
-      cube = new THREE.Mesh(geometry, material);
+      // cube = new THREE.Mesh(geometry, material);
+      cube = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(material) );
+
       scene.add(cube);
 
       // rando effects
@@ -135,6 +184,9 @@
       var syz = document.getElementById("syz").value;
       var szx = document.getElementById("szx").value;
       var szy = document.getElementById("szy").value;
+      var height = document.getElementById("height").value;
+      var width = document.getElementById("width").value;
+      var depth = document.getElementById("depth").value;
 
       // update new elements in matrix
       cube.matrix.elements[1] = sxy;
@@ -143,6 +195,10 @@
       cube.matrix.elements[6] = syz;
       cube.matrix.elements[8] = szx;
       cube.matrix.elements[9] = szy;
+      cube.matrix.elements[5] = height;
+      cube.matrix.elements[0] = width;
+      cube.matrix.elements[10] = depth;
+
       cube.matrixAutoUpdate = false;
 
       //cube.geometry.vertices[2].x = sxy;
